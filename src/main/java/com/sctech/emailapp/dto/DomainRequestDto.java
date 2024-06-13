@@ -17,10 +17,9 @@ public class DomainRequestDto extends BaseRequestDto{
     private DomainType type;
 
     @NotNull
-    private DomainStatus Status;
+    private DomainStatus status;
 
     @NotNull
-    @NotEmpty
     private Boolean dkim;
 
     private String dkimPrivateKey;

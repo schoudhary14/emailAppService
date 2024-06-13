@@ -12,8 +12,6 @@ public class ApiKeyRequestDto extends BaseRequestDto{
     @NotEmpty
     private String name;
 
-    @NotNull
-    @NotEmpty
     private String[] ipAddress;
 
     @NotNull

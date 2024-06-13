@@ -2,6 +2,7 @@ package com.sctech.emailapp.service;
 
 import com.sctech.emailapp.dto.DomainRequestDto;
 import com.sctech.emailapp.enums.DomainStatus;
+import com.sctech.emailapp.exceptions.AlreadyExistsException;
 import com.sctech.emailapp.exceptions.NotExistsException;
 import com.sctech.emailapp.model.Domain;
 import com.sctech.emailapp.repository.DomainRepository;
@@ -24,13 +25,18 @@ public class DomainService {
 
     public Domain getDetail(String companyId, String domainId){
         Optional<Domain> optionalDomain = domainRepository.findById(domainId);
-        if(!optionalDomain.isEmpty()){
+        if(optionalDomain.isEmpty()){
             throw new NotExistsException();
         }
         return optionalDomain.get();
     }
 
     public Domain create(DomainRequestDto domainRequestDto){
+        Optional<Domain> optionalDomain = domainRepository.findByNameAndCompanyId(domainRequestDto.getName(), domainRequestDto.getCompanyId());
+        if(optionalDomain.isPresent()){
+            throw new AlreadyExistsException();
+        }
+
         Domain domain = new Domain();
         domain.setName(domainRequestDto.getName());
         domain.setDkim(domainRequestDto.getDkim());
@@ -46,7 +52,7 @@ public class DomainService {
 
     public Domain update(String domainId, DomainRequestDto domainRequestDto){
         Optional<Domain> optionalDomain = domainRepository.findById(domainId);
-        if(!optionalDomain.isEmpty()){
+        if(optionalDomain.isEmpty()){
             throw new NotExistsException();
         }
 
@@ -93,7 +99,7 @@ public class DomainService {
 
     public Domain verify(String domainId, DomainRequestDto domainRequestDto){
         Optional<Domain> optionalDomain = domainRepository.findById(domainId);
-        if(!optionalDomain.isEmpty()){
+        if(optionalDomain.isEmpty()){
             throw new NotExistsException();
         }
         Domain domain = optionalDomain.get();
@@ -102,7 +108,11 @@ public class DomainService {
     }
 
     public void delete(String companyId, String domainId){
-        domainRepository.deleteByIdAndCompanyId(companyId, domainId);
+        Optional<Domain> optionalDomain = domainRepository.findById(domainId);
+        if(optionalDomain.isEmpty()){
+            throw new NotExistsException();
+        }
+        domainRepository.deleteByIdAndCompanyId(domainId, companyId);
     }
 
 

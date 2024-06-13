@@ -18,11 +18,15 @@ public class ApiKeyService {
     public List<Company.ApiKey> getAll(){
         ArrayList<Company.ApiKey> apiKeys = new ArrayList<>();
         for(Company company : companyService.getAll()){
+            if(company.getApiKeys() == null){
+                continue;
+            }
             for(Company.ApiKey apiKey : company.getApiKeys()) {
                 apiKey.setKey(apiKey.getKey().substring(0, 3) + "**************************" + apiKey.getKey().substring(apiKey.getKey().length() - 3));
                 apiKeys.add(apiKey);
             }
         }
+        System.out.println("Api Keys : " + apiKeys);
         return apiKeys;
     }
 

@@ -1,0 +1,2 @@
+name,from,to,bcc,cc,subject,content,type,attachment
+"s c","from@tes.com","to@test.com;to2@test.com","bcc@test.com;bcc2@test.com","cc@test.com;cc2@test.com","subject","content","TEXT",""
