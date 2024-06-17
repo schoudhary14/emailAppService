@@ -1,11 +1,14 @@
 package com.sctech.emailapp.controller;
 
 import com.sctech.emailapp.dto.CommonResposeDto;
+import com.sctech.emailapp.dto.FileRequestDto;
+import com.sctech.emailapp.enums.FileAction;
 import com.sctech.emailapp.enums.FileStatus;
 import com.sctech.emailapp.exceptions.InvalidRequestException;
 import com.sctech.emailapp.model.FileDetail;
 import com.sctech.emailapp.service.FileService;
 import com.sctech.emailapp.util.EmailResponseBuilder;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,13 +28,13 @@ public class FileUploadController {
     private EmailResponseBuilder emailResponseBuilder;
 
     @PostMapping
-    public ResponseEntity<CommonResposeDto> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<CommonResposeDto> uploadFile(@Valid @RequestParam("file") MultipartFile file, @Valid @RequestBody FileRequestDto fileRequestDto) {
         if (file.isEmpty()) {
             throw new InvalidRequestException("Please select a file to upload");
         }
 
         try {
-            FileDetail fileDetail = fileService.fileUpload(file);
+            FileDetail fileDetail = fileService.fileUpload(file, fileRequestDto);
             return new ResponseEntity<>(emailResponseBuilder.commonResponse("File uploaded successfully",null), HttpStatus.OK);
         } catch (Exception e) {
             throw new RuntimeException("File upload failed");
@@ -45,7 +48,7 @@ public class FileUploadController {
     }
 
     @GetMapping("/action/{fileId}")
-    public ResponseEntity<CommonResposeDto> setAction(@PathVariable("fileId") String fileId, @RequestParam("event") FileStatus fileAction){
+    public ResponseEntity<CommonResposeDto> setAction(@PathVariable("fileId") String fileId, @RequestParam("event") FileAction fileAction){
         String resp = fileService.setFileAction(fileId, fileAction);
         return new ResponseEntity<>(emailResponseBuilder.commonResponse(resp,null),HttpStatus.OK);
     }

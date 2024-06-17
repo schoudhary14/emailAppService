@@ -2,6 +2,7 @@ package com.sctech.emailapp.service;
 
 import com.sctech.emailapp.dto.DomainRequestDto;
 import com.sctech.emailapp.enums.DomainStatus;
+import com.sctech.emailapp.enums.DomainType;
 import com.sctech.emailapp.exceptions.AlreadyExistsException;
 import com.sctech.emailapp.exceptions.NotExistsException;
 import com.sctech.emailapp.model.Domain;
@@ -19,8 +20,8 @@ public class DomainService {
     @Autowired
     private DomainRepository domainRepository;
 
-    public List<Domain> getAll(){
-        return domainRepository.findAll();
+    public List<Domain> getAll(DomainType domainType){
+        return domainRepository.findByType(domainType);
     }
 
     public Domain getDetail(String companyId, String domainId){

@@ -3,11 +3,9 @@ package com.sctech.emailapp.enums;
 public enum FileStatus {
     LOADING,
     LOADED,
-    PROCESSING,
-    KILL,
-    START,
+    SENDING,
+    KILLED,
+    FAILED,
     COMPLETE,
-    DELETE,
-    FAILED
-
+    STOPED
 }

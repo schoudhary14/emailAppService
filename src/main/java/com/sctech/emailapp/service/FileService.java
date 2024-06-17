@@ -1,7 +1,9 @@
 package com.sctech.emailapp.service;
 
 import com.opencsv.CSVReader;
+import com.sctech.emailapp.dto.FileRequestDto;
 import com.sctech.emailapp.enums.EmailDataStatus;
+import com.sctech.emailapp.enums.FileAction;
 import com.sctech.emailapp.enums.FileStatus;
 import com.sctech.emailapp.kafka.KafkaProducer;
 import com.sctech.emailapp.model.EmailData;
@@ -54,7 +56,7 @@ public class FileService {
         return mongoTemplate.findAll(FileDetail.class);
     }
 
-    public FileDetail fileUpload(MultipartFile file){
+    public FileDetail fileUpload(MultipartFile file, FileRequestDto fileRequestDto){
         FileDetail fileDetail = new FileDetail();
         fileDetail.setStatus(FileStatus.LOADING);
 
@@ -88,13 +90,20 @@ public class FileService {
             System.out.println("failed : " + e.getMessage());
         }
 
+        processFile(fileDetail);
+
         return fileDetail;
     }
 
     @Async
-    public void processFile(FileDetail fileDetail, String fileId) {
-        fileDetail.setStatus(FileStatus.PROCESSING);
-        mongoTemplate.save(fileDetail);
+    private void processFile(FileDetail fileDetail) {
+        if(fileDetail.getStatus().equals(FileStatus.KILLED)){
+            return;
+        }
+
+        if(fileDetail.getStatus().equals(FileStatus.COMPLETE)){
+            return;
+        }
 
         Integer fileRowCounter = 0;
         Integer fileRowInvalidCounter = 0;
@@ -114,7 +123,7 @@ public class FileService {
                 request.setSubject(CurnextLine[5]);
                 request.setContent(CurnextLine[6]);
                 request.setType(CurnextLine[7]);
-                request.setSourceId(fileId);
+                request.setSourceId(fileDetail.getId());
 
                 if (EmailAddressValidator.isValidEmail(request.getTo())) {
                     request.setStatus(EmailDataStatus.VALID);
@@ -125,16 +134,16 @@ public class FileService {
                 }
 
                 emailDataEntities.add(request);
-                kafkaProducer.sendToQueue(request);
+                //kafkaProducer.sendToQueue(request);
 
                 fileRowCounter = fileRowCounter + 1;
 
                 if (fileRowCounter.equals(fileBatchSize)) {
-                    Optional<FileDetail> fileDetails = fileDetailsRepository.findById(fileId);
+                    Optional<FileDetail> fileDetails = fileDetailsRepository.findById(fileDetail.getId());
                     fileDetail = fileDetails.get();
 
-                    if (fileDetail.getStatus() == FileStatus.KILL || fileDetail.getStatus() == FileStatus.DELETE) {
-                        System.out.println("stopping file process for : " + fileId);
+                    if (fileDetail.getStatus() == FileStatus.KILLED ) {
+                        System.out.println("stopping file process for : " + fileDetail.getId());
                     }
 
                     mongoTemplate.save(emailDataEntities, "emailData");
@@ -161,7 +170,7 @@ public class FileService {
             }
 
             fileDetail.setUpdatedAt(LocalDateTime.now());
-            fileDetail.setStatus(FileStatus.COMPLETE);
+            fileDetail.setStatus(FileStatus.LOADED);
             mongoTemplate.save(fileDetail);
 
         }catch (Exception e){
@@ -171,20 +180,23 @@ public class FileService {
 
     }
 
-    public String setFileAction(String fileId, FileStatus fileAction){
+    private void emailRequest(FileDetail fileDetail){
+
+    }
+
+    public String setFileAction(String fileId, FileAction fileAction){
         Optional<FileDetail> fileDetails =  fileDetailsRepository.findById(fileId);
 
         if (fileDetails.isPresent()){
             FileDetail fileDetail = fileDetails.get();
-            if (fileDetail.getStatus().equals(FileStatus.PROCESSING) && fileAction != FileStatus.KILL){
+            if (fileDetail.getStatus().equals(FileStatus.LOADING) && fileAction != FileAction.KILL){
                 return "FileLadingInProcess";
             }
 
-            fileDetail.setStatus(fileAction);
-            mongoTemplate.save(fileDetail);
-
-            if (fileAction.equals(FileStatus.START)){
-                processFile(fileDetail,fileId);
+            if (fileAction.equals(FileAction.START) || fileAction.equals(FileAction.RETRY)){
+                emailRequest(fileDetail);
+                fileDetail.setStatus(FileStatus.SENDING);
+                mongoTemplate.save(fileDetail);
             }
             return "FileActionUpdated";
         }
@@ -196,7 +208,7 @@ public class FileService {
 
         if (fileDetails.isPresent()) {
             FileDetail fileDetail = fileDetails.get();
-            if (fileDetail.getStatus().equals(FileStatus.PROCESSING) || fileDetail.getStatus().equals(FileStatus.LOADING)) {
+            if (fileDetail.getStatus().equals(FileStatus.SENDING) || fileDetail.getStatus().equals(FileStatus.LOADING)) {
                 return "FileInUse";
             }
             fileDetailsRepository.deleteById(fileId);

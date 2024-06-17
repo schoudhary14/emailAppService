@@ -27,13 +27,17 @@ public class AuthenticationController {
     
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> authenticate(@RequestBody @Valid LoginUserDto loginUserDto) {
+        System.out.println("in loging : " + loginUserDto);
         User authenticatedUser = authenticationService.authenticate(loginUserDto);
+        System.out.println("User Details : " + authenticatedUser);
 
         String jwtToken = jwtService.generateToken(authenticatedUser);
+        System.out.println("JWT : " + jwtToken);
 
         LoginResponseDto loginResponseDto = new LoginResponseDto();
         loginResponseDto.setToken(jwtToken);
         loginResponseDto.setExpiresIn(jwtService.getExpirationTime());
+        System.out.println("response : " + loginResponseDto);
 
         return ResponseEntity.ok(loginResponseDto);
     }

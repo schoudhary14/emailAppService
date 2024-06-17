@@ -3,13 +3,19 @@ package com.sctech.emailapp.controller;
 import com.sctech.emailapp.dto.BaseRequestDto;
 import com.sctech.emailapp.dto.CommonResposeDto;
 import com.sctech.emailapp.dto.DomainRequestDto;
+import com.sctech.emailapp.enums.DomainType;
+import com.sctech.emailapp.exceptions.InvalidRequestException;
 import com.sctech.emailapp.model.Domain;
 import com.sctech.emailapp.service.DomainService;
 import com.sctech.emailapp.util.EmailResponseBuilder;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -17,6 +23,7 @@ import java.util.List;
 
 @RequestMapping("/setting/domain")
 @RestController
+@Validated
 public class DomainController {
 
     @Autowired
@@ -35,8 +42,9 @@ public class DomainController {
     }
 
     @GetMapping
-    public ResponseEntity<CommonResposeDto> getAll(){
-        List<Domain> domains = domainService.getAll();
+    public ResponseEntity<CommonResposeDto> getAll(@RequestParam("domainType") @Valid DomainType domainType){
+
+        List<Domain> domains = domainService.getAll(domainType);
         CommonResposeDto commonResposeDto = emailResponseBuilder.commonResponse("success",domains);
         return new ResponseEntity<>(commonResposeDto, HttpStatus.OK);
     }

@@ -29,4 +29,14 @@ public class FileDetail {
         private Integer invalidCount;
         private Integer validCount;
     }
+
+    @Data
+    public static class sendingDetails {
+        private String fromName;
+        private String fromEmail;
+        private String replyTo;
+        private String subject;
+        private String templateId;
+    }
+
 }
